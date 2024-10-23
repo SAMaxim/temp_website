@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird</title>
+    <style>
+        /* Add some basic styling to our game */
+        canvas {
+            border: 1px solid black;
+        }
+        /* Hide the images, we'll draw them on the canvas */
+        img {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="288" height="512"></canvas>
+    <img id="pillarTop" src="pillar-top.png" alt="Pillar Top">
+    <img id="pillarBottom" src="pillar-bottom.png" alt="Pillar Bottom">
+    <img id="bird" src="bird.png" alt="Bird">
+    <img id="background" src="background.png" alt="Background">
+    <script>
+        // Get the canvas and its 2D drawing context
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d');
+
+        // Load the images
+        var pillarTop = document.getElementById('pillarTop');
+        var pillarBottom = document.getElementById('pillarBottom');
+        var bird = document.getElementById('bird');
+        var background = document.getElementById('background');
+
+        // Set the canvas dimensions
+        canvas.width = 288;
+        canvas.height = 512;
+
+        // Game variables
+        var birdX = 50;
+        var birdY = canvas.height / 2;
+        var birdSpeed = 0;
+        var gravity = 0.2;
+        var pillarGap = 100;
+        var pillarWidth = 50;
+        var pillarSpeed = 2;
+        var pillarX = canvas.width;
+        var pillarTopHeight = Math.random() * (canvas.height - pillarGap);
+        var score = 0;
+        var gameOver = false;
+
+        // Draw the background
+        function drawBackground() {
+            ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+        }
+
+        // Draw the bird
+        function drawBird() {
+            ctx.drawImage(bird, birdX, birdY, 30, 30);
+        }
+
+        // Draw the pillars
+        function drawPillars() {
+            ctx.drawImage(pillarTop, pillarX, 0, pillarWidth, pillarTopHeight);
+            ctx.drawImage(pillarBottom, pillarX, pillarTopHeight + pillarGap, pillarWidth, canvas.height - pillarTopHeight - pillarGap);
+        }
+
+        // Update the game state
+        function update() {
+            // Move the pillars
+            pillarX -= pillarSpeed;
+
+            // Check for collision with pillars
+            if (pillarX < birdX + 30 && pillarX + pillarWidth > birdX && (birdY < pillarTopHeight || birdY + 30 > pillarTopHeight + pillarGap)) {
+                gameOver = true;
+            }
+
+            // Check for collision with ground or sky
+            if (birdY < 0 || birdY + 30 > canvas.height) {
+                gameOver = true;
+            }
+
+            // Move the bird
+            birdSpeed += gravity;
+            birdY += birdSpeed;
+
+            // Check if the bird has passed the pillar
+            if (pillarX + pillarWidth < birdX && pillarX + pillarWidth > birdX - pillarSpeed) {
+                score++;
+                pillarX = canvas.width;
+                pillarTopHeight = Math.random() * (canvas.height - pillarGap);
+            }
+
+            // Check if the game is over
+            if (gameOver) {
+                alert('Game Over! Your score is ' + score);
+                return;
+            }
+
+            // Draw the game
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            drawPillars();
+            drawBird();
+
+            // Update the score
+            ctx.font = '24px Arial';
+            ctx.fillStyle = 'black';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Score: ' + score, 10, 10);
+
+            // Request the next frame
+            requestAnimationFrame(update);
+        }
+
+        // Start the game
+        document.addEventListener('keydown', function(event) {
+            if (event.key === ' ') {
+                birdSpeed = -6;
+            }
+        });
+        canvas.addEventListener('touchstart', function(event) {
+            birdSpeed = -6;
+        });
+        update();
+    </script>
+</body>
+</html>
