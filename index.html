@@ -1,129 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird</title>
-    <style>
-        /* Add some basic styling to our game */
-        canvas {
-            border: 1px solid black;
-        }
-        /* Hide the images, we'll draw them on the canvas */
-        img {
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Bird with Words</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #70c5ce;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+      background-color: #70c5ce;
+    }
+    .game-over, .score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .game-over {
+      display: none;
+      color: red;
+    }
+  </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="288" height="512"></canvas>
-    <img id="pillarTop" src="pillar-top.png" alt="Pillar Top">
-    <img id="pillarBottom" src="pillar-bottom.png" alt="Pillar Bottom">
-    <img id="bird" src="bird.png" alt="Bird">
-    <img id="background" src="background.png" alt="Background">
-    <script>
-        // Get the canvas and its 2D drawing context
-        var canvas = document.getElementById('gameCanvas');
-        var ctx = canvas.getContext('2d');
+  <canvas id="gameCanvas"></canvas>
+  <div class="game-over">Game Over! Tap to Restart</div>
+  <div class="score">Score: 0</div>
 
-        // Load the images
-        var pillarTop = document.getElementById('pillarTop');
-        var pillarBottom = document.getElementById('pillarBottom');
-        var bird = document.getElementById('bird');
-        var background = document.getElementById('background');
+  <script>
+    // Define the array of words
+    const wordsArray = ['configurator.sh', 'manager.sh', 'logger.sh', 'transporter', 'анализ', 'календарь', 'UFC с UMI', 'Design Review', 'процесс сбора', 'статистика'];
 
-        // Set the canvas dimensions
-        canvas.width = 288;
-        canvas.height = 512;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-        // Game variables
-        var birdX = 50;
-        var birdY = canvas.height / 2;
-        var birdSpeed = 0;
-        var gravity = 0.2;
-        var pillarGap = 100;
-        var pillarWidth = 50;
-        var pillarSpeed = 2;
-        var pillarX = canvas.width;
-        var pillarTopHeight = Math.random() * (canvas.height - pillarGap);
-        var score = 0;
-        var gameOver = false;
+    // Bird image
+    const birdImg = new Image();
+    birdImg.src = 'bird.png'; // Replace with the path to your bird.png
 
-        // Draw the background
-        function drawBackground() {
-            ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-        }
+    // Background image
+    const bgImg = new Image();
+    bgImg.src = 'background.jpeg'; // Replace with the path to your background.jpeg
 
-        // Draw the bird
-        function drawBird() {
-            ctx.drawImage(bird, birdX, birdY, 30, 30);
-        }
+    const bird = { x: 50, y: 150, width: 40, height: 40, gravity: 0.6, lift: -10, velocity: 0 };
+    let pillars = [];
+    let score = 0;
+    let gameOver = false;
 
-        // Draw the pillars
-        function drawPillars() {
-            ctx.drawImage(pillarTop, pillarX, 0, pillarWidth, pillarTopHeight);
-            ctx.drawImage(pillarBottom, pillarX, pillarTopHeight + pillarGap, pillarWidth, canvas.height - pillarTopHeight - pillarGap);
-        }
+    const pillarGap = 150; // Gap between the pillars
+    const pillarWidth = 40;
+    const birdJumpHeight = 40;
 
-        // Update the game state
-        function update() {
-            // Move the pillars
-            pillarX -= pillarSpeed;
+    function setup() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
 
-            // Check for collision with pillars
-            if (pillarX < birdX + 30 && pillarX + pillarWidth > birdX && (birdY < pillarTopHeight || birdY + 30 > pillarTopHeight + pillarGap)) {
-                gameOver = true;
-            }
+      // Reset bird and pillars
+      bird.y = canvas.height / 2;
+      bird.velocity = 0;
+      pillars = [];
+      gameOver = false;
+      score = 0;
+      document.querySelector('.score').innerText = `Score: 0`;
 
-            // Check for collision with ground or sky
-            if (birdY < 0 || birdY + 30 > canvas.height) {
-                gameOver = true;
-            }
-
-            // Move the bird
-            birdSpeed += gravity;
-            birdY += birdSpeed;
-
-            // Check if the bird has passed the pillar
-            if (pillarX + pillarWidth < birdX && pillarX + pillarWidth > birdX - pillarSpeed) {
-                score++;
-                pillarX = canvas.width;
-                pillarTopHeight = Math.random() * (canvas.height - pillarGap);
-            }
-
-            // Check if the game is over
-            if (gameOver) {
-                alert('Game Over! Your score is ' + score);
-                return;
-            }
-
-            // Draw the game
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-            drawPillars();
-            drawBird();
-
-            // Update the score
-            ctx.font = '24px Arial';
-            ctx.fillStyle = 'black';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillText('Score: ' + score, 10, 10);
-
-            // Request the next frame
-            requestAnimationFrame(update);
-        }
-
-        // Start the game
-        document.addEventListener('keydown', function(event) {
-            if (event.key === ' ') {
-                birdSpeed = -6;
-            }
+      // Create pillars based on words array
+      let x = canvas.width;
+      for (let i = 0; i < wordsArray.length; i++) {
+        pillars.push({
+          x: x,
+          width: pillarWidth,
+          height: Math.random() * (canvas.height / 2),
+          word: wordsArray[i]
         });
-        canvas.addEventListener('touchstart', function(event) {
-            birdSpeed = -6;
-        });
-        update();
-    </script>
+        x += pillarGap + pillarWidth;
+      }
+    }
+
+    function drawBackground() {
+      // Tile the background to cover the entire canvas
+      ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    }
+
+    function drawBird() {
+      // Draw the bird image
+      ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+    }
+
+    function drawPillars() {
+      ctx.fillStyle = 'green';
+      pillars.forEach(pillar => {
+        ctx.fillRect(pillar.x, 0, pillar.width, pillar.height);
+        ctx.fillRect(pillar.x, pillar.height + 100, pillar.width, canvas.height - pillar.height - 100);
+
+        // Draw the word vertically on the pillar
+        ctx.save();
+        ctx.translate(pillar.x + pillar.width / 2, pillar.height + 50);
+        ctx.rotate(-Math.PI / 2); // Rotate the text
+        ctx.fillStyle = 'white';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(pillar.word, 0, 0);
+        ctx.restore();
+      });
+    }
+
+    function updateGame() {
+      bird.velocity += bird.gravity;
+      bird.y += bird.velocity;
+
+      // Move pillars
+      pillars.forEach(pillar => {
+        pillar.x -= 2;
+      });
+
+      // Check for collisions with pillars
+      pillars.forEach(pillar => {
+        if (bird.x < pillar.x + pillar.width &&
+            bird.x + bird.width > pillar.x &&
+            (bird.y < pillar.height || bird.y + bird.height > pillar.height + 100)) {
+          gameOver = true;
+        }
+
+        // Check if bird passed the pillar
+        if (!pillar.passed && pillar.x + pillar.width < bird.x) {
+          pillar.passed = true;
+          score++;
+          document.querySelector('.score').innerText = `Score: ${score}`;
+        }
+      });
+
+      // Remove pillars that are off-screen
+      if (pillars.length > 0 && pillars[0].x + pillars[0].width < 0) {
+        pillars.shift();
+      }
+
+      // End game if all pillars are passed
+      if (pillars.length === 0) {
+        gameOver = true;
+      }
+
+      // Check if bird hits the ground or flies too high
+      if (bird.y + bird.height > canvas.height || bird.y < 0) {
+        gameOver = true;
+      }
+
+      if (gameOver) {
+        document.querySelector('.game-over').style.display = 'block';
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawBackground();
+      drawBird();
+      drawPillars();
+
+      if (!gameOver) {
+        updateGame();
+        requestAnimationFrame(draw);
+      }
+    }
+
+    // Bird jump on tap/click
+    canvas.addEventListener('click', () => {
+      if (gameOver) {
+        setup();
+        document.querySelector('.game-over').style.display = 'none';
+        requestAnimationFrame(draw);
+      } else {
+        bird.velocity = bird.lift;
+      }
+    });
+
+    // Initialize game
+    setup();
+    requestAnimationFrame(draw);
+  </script>
 </body>
 </html>
